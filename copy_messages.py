@@ -2,29 +2,6 @@ from telethon import events
 from telethon.sync import TelegramClient
 from configparser import ConfigParser
 
-try:
-    parser = ConfigParser()
-    parser.read('config.ini')
-
-    PHONE_NUMBER = parser.get("TELEGRAM", 'PHONE_NUMBER')
-    API_ID = int(parser.get("TELEGRAM", 'API_ID'))
-    API_HASH = parser.get("TELEGRAM", 'API_HASH')
-
-    # Create the client and connect
-    client = TelegramClient(PHONE_NUMBER, API_ID, API_HASH)
-    client.start()
-
-except Exception as error:
-    print("Error reading file config.ini, check it and try again.\n"
-          "The file content should looks like this:\n"
-          "[TELEGRAM]\n"
-          "API_ID = 1234567\n"
-          "API_HASH = xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n"
-          "PHONE_NUMBER = +972544444444")
-    print(error)
-    input("\nPress any key to quit")
-    exit()
-
 
 def get_all_groups_and_channels():
     all_groups_lst = []
@@ -61,29 +38,52 @@ def send_message(entity_group, message_content):
     client.send_message(entity=entity, message=message_content)
 
 
-# Start flow:
-all_groups_and_channels = get_all_groups_and_channels()
-groups_to_follow = choose_groups(all_groups_and_channels, "FOLLOW")
-groups_to_send = choose_groups(all_groups_and_channels, "SEND")
+if __name__ == '__main__':
+    try:
+        parser = ConfigParser()
+        parser.read('config.ini')
 
-entities_to_follow = []
-for group in groups_to_follow:
-    entities_to_follow.append(group.get('entity'))
-entities_to_send = []
-for group in groups_to_send:
-    entities_to_send.append(group.get('entity'))
+        PHONE_NUMBER = parser.get("TELEGRAM", 'PHONE_NUMBER')
+        API_ID = int(parser.get("TELEGRAM", 'API_ID'))
+        API_HASH = parser.get("TELEGRAM", 'API_HASH')
 
-print("\n\nStarted listening to groups...")
+        # Create the client and connect
+        client = TelegramClient(PHONE_NUMBER, API_ID, API_HASH)
+        client.start()
 
+    except Exception as error:
+        print("Error reading file config.ini, check it and try again.\n"
+            "The file content should looks like this:\n"
+            "[TELEGRAM]\n"
+            "API_ID = 1234567\n"
+            "API_HASH = xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n"
+            "PHONE_NUMBER = +972544444444")
+        print(error)
+        input("\nPress any key to quit")
+        exit()
 
-@client.on(events.NewMessage(chats=entities_to_follow))
-async def handler(event):
-    raw_message = str(event.raw_text)
+    all_groups_and_channels = get_all_groups_and_channels()
+    groups_to_follow = choose_groups(all_groups_and_channels, "FOLLOW")
+    groups_to_send = choose_groups(all_groups_and_channels, "SEND")
+
+    entities_to_follow = []
     for group in groups_to_follow:
-        if int(group.get('id')) == int(event.chat_id) or int("-100" + str(group.get('id'))) == int(event.chat_id):
-            print(f"\nNew from {group.get('name')}:")
-    print(raw_message)
-    for entity_to_send in entities_to_send:
-        await client.send_message(entity=entity_to_send, message=raw_message)
+        entities_to_follow.append(group.get('entity'))
+    entities_to_send = []
+    for group in groups_to_send:
+        entities_to_send.append(group.get('entity'))
 
-client.run_until_disconnected()
+    print("\n\nStarted listening to groups...")
+
+
+    @client.on(events.NewMessage(chats=entities_to_follow))
+    async def handler(event):
+        raw_message = str(event.raw_text)
+        for group in groups_to_follow:
+            if int(group.get('id')) == int(event.chat_id) or int("-100" + str(group.get('id'))) == int(event.chat_id):
+                print(f"\nNew from {group.get('name')}:")
+        print(raw_message)
+        for entity_to_send in entities_to_send:
+            await client.send_message(entity=entity_to_send, message=raw_message)
+
+    client.run_until_disconnected()
