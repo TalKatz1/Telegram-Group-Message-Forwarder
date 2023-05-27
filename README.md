@@ -28,4 +28,6 @@ Usage:
 4. The script will start listening to the selected groups and forward any new messages to the specified send groups.
 5. Press Ctrl+C to stop the script and exit.
 
+Or just download the copy_messages.exe executable file, place it on the same folder with the config.ini file and open it.
+
 Note: Ensure that the phone number associated with the Telegram API credentials has access to the groups you want to follow and send messages to.
